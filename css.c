@@ -122,7 +122,6 @@ int main(int argc, char** argv)
 			unsigned char lfsr_25_byte = lfsr_byte_gen(&lfsr_25, 25, 4, (char[]) {0, 3, 4, 14});
 			buffer[i] = buffer[i] ^ (lfsr_17_byte + lfsr_25_byte); 	
 		}
-		long bytes_written;
 		if(cipher_text != NULL)
 		{
 			total_bytes_written += fwrite(buffer, sizeof(char), bytes_read, cipher_text);
@@ -142,7 +141,7 @@ int main(int argc, char** argv)
 	if(cipher_text != NULL)
 		fclose(cipher_text);
 	
-	if((total_bytes_read != total_bytes || (total_bytes_written != total_bytes)))
+	if((total_bytes_read != total_bytes) || (total_bytes_written != total_bytes))
 	{
 		printf("Error: Failed to completely encrypt file\n");
 		return 1;
