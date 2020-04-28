@@ -4,10 +4,11 @@
 #include <string.h>
 
 #define BUFFER_SIZE 1024*1024
-void print_help()
+
+void print_help(void)
 {
 	printf("CSS: Content Scrambling System.\n");
-	printf("-h for help menu\n-t target path(required)\n-k key(required)\n-d destination, overwrite if none given\n");
+	printf("-h help menu\n-t target path(required)\n-k key(required)\n-d destination. overwrites target if none given\n");
 	exit(0);
 }
 
@@ -26,6 +27,23 @@ unsigned char lfsr_byte_gen(uint32_t* lfsr, size_t lfsr_length, size_t tag_lengt
 		*lfsr = (*lfsr >> 1) | (bit << (lfsr_length - 1));
 	}
 	return ret;
+}
+
+unsigned char* build_key(char* given_key)
+{
+	unsigned char* key = calloc(5, sizeof(unsigned char));
+	size_t len = strlen(given_key);
+	if(key == NULL)
+		return NULL;
+	for(size_t i = 0; i < len; i++)
+	{
+		key[0] &= given_key[i];
+		key[1] += given_key[i];
+		key[2] *= given_key[i];
+		key[3] ^= given_key[i];
+		key[4] -= given_key[i];
+	}	
+	return key;
 }
 
 int main(int argc, char** argv) 
@@ -63,11 +81,18 @@ int main(int argc, char** argv)
 		return 1;
 	}
 
+	unsigned char* constructed_key = build_key(key);
+	if(constructed_key == NULL)
+	{
+		printf("Error: not enough memory");
+		return 1;	
+	}
 	uint32_t lfsr_17 = 0;
 	uint32_t lfsr_25 = 0;
 
-	lfsr_17 =((key[0] << 9) + key[1]) | (1 << 8);	
-	lfsr_25 = ((key[2] << 17) + (key[3] << 9) + key[4]) | (1 << 8);	
+	lfsr_17 =((constructed_key[0] << 9) + constructed_key[1]) | (1 << 8);	
+	lfsr_25 = ((constructed_key[2] << 17) + (constructed_key[3] << 9) + constructed_key[4]) | (1 << 8);	
+	free(constructed_key);
 
 	FILE* plain_text = NULL; 
 	FILE* cipher_text = NULL;
@@ -135,8 +160,9 @@ int main(int argc, char** argv)
 		if(bytes_read < BUFFER_SIZE)
 			break;
 			
-	}	
+	}
 
+	free(buffer);
 	fclose(plain_text);
 	if(cipher_text != NULL)
 		fclose(cipher_text);
