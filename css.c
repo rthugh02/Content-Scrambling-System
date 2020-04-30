@@ -22,7 +22,6 @@ unsigned char lfsr_byte_gen(uint32_t* lfsr, size_t lfsr_length, size_t tag_lengt
 		{
 			bit = (bit ^ (*lfsr >> tags[j]));
 		}
-		bit = bit & 1;
 		ret = ret | (bit << i);
 		*lfsr = (*lfsr >> 1) | (bit << (lfsr_length - 1));
 	}
