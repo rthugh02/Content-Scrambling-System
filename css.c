@@ -12,6 +12,14 @@ void print_help(void)
 	exit(0);
 }
 
+void file_handler(FILE* plain_text, FILE* cipher_text)
+{
+	if(plain_text != NULL)
+		fclose(plain_text);
+	if(cipher_text != NULL)
+		fclose(cipher_text);
+}
+
 unsigned char lfsr_byte_gen(uint32_t* lfsr, size_t lfsr_length, size_t tag_length, char tags[])
 {
 	unsigned char ret = 0;
@@ -36,11 +44,11 @@ unsigned char* build_key(char* given_key)
 		return NULL;
 	for(size_t i = 0; i < len; i++)
 	{
-		key[0] &= given_key[i];
-		key[1] += given_key[i];
-		key[2] *= given_key[i];
-		key[3] ^= given_key[i];
-		key[4] -= given_key[i];
+		key[0] += given_key[i] + key[1];
+		key[1] *= given_key[i] + key[2];
+		key[2] *= given_key[i] + key[3];
+		key[3] ^= given_key[i] + key[4];
+		key[4] -= given_key[i] + key[0];
 	}	
 	return key;
 }
@@ -74,6 +82,7 @@ int main(int argc, char** argv)
 		printf("Error: Missing Arguments. -h for help\n");
 		return 1;
 	}		
+
 	if(strlen(key) < 5)
 	{
 		printf("Error: Invalid Key length (5 minimum)\n");
@@ -86,6 +95,7 @@ int main(int argc, char** argv)
 		printf("Error: not enough memory");
 		return 1;	
 	}
+
 	uint32_t lfsr_17 = 0;
 	uint32_t lfsr_25 = 0;
 
@@ -98,15 +108,17 @@ int main(int argc, char** argv)
 	
 	if(destination_path == NULL)
 	{
-		plain_text	= fopen(target_path, "r+b");
+		plain_text = fopen(target_path, "r+b");
 	}
 	else 
 	{
 		plain_text = fopen(target_path, "rb");
 		cipher_text = fopen(destination_path, "wb");
+
 		if(cipher_text == NULL)
 		{
 			printf("Error: Could not create destination file\n");
+			file_handler(plain_text, cipher_text);
 			return 1;
 		}
 	}
@@ -114,6 +126,7 @@ int main(int argc, char** argv)
 	if(plain_text == NULL)
 	{
 		printf("Error opening file\n");
+		file_handler(plain_text, cipher_text);
 		return 1;
 	}
 
@@ -122,8 +135,10 @@ int main(int argc, char** argv)
 	if(fseek(plain_text, 0, SEEK_END) != 0)
 	{
 		printf("Error reading file\n");
+		file_handler(plain_text, cipher_text);
 		return 1;
 	}
+
 	total_bytes = ftell(plain_text);
 	rewind(plain_text);
 
@@ -131,6 +146,7 @@ int main(int argc, char** argv)
 	if(buffer == NULL)
 	{
 		printf("Error: not enough memory\n");
+		file_handler(plain_text, cipher_text);
 		return 1;
 	}
 	
@@ -162,10 +178,7 @@ int main(int argc, char** argv)
 	}
 
 	free(buffer);
-	fclose(plain_text);
-	if(cipher_text != NULL)
-		fclose(cipher_text);
-	
+	file_handler(plain_text, cipher_text);	
 	if((total_bytes_read != total_bytes) || (total_bytes_written != total_bytes))
 	{
 		printf("Error: Failed to completely encrypt file\n");
