@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
+#include <limits.h>
 
 #define BUFFER_SIZE 1024*1024
 
@@ -23,7 +24,7 @@ void file_handler(FILE* plain_text, FILE* cipher_text)
 unsigned char lfsr_byte_gen(uint32_t* lfsr, size_t lfsr_length, size_t tag_length, char tags[])
 {
 	unsigned char ret = 0;
-	for(size_t i = 0; i < sizeof(char); i++)
+	for(size_t i = 0; i < CHAR_BIT; i++)
 	{
 		uint32_t bit = 0;
 		for(size_t j = 0; j < tag_length; j++)
